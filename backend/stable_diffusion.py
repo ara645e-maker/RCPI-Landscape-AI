@@ -1,8 +1,11 @@
 import base64
 import os
+import urllib.parse
+import urllib.request
 from io import BytesIO
 
 MODEL_ID = os.environ.get("SD_MODEL_ID", "runwayml/stable-diffusion-v1-5")
+POLLINATIONS_URL = "https://image.pollinations.ai/prompt/"
 
 _pipeline = None
 
@@ -21,6 +24,17 @@ def get_pipeline():
     return _pipeline
 
 
+def _pollinations_fallback(prompt: str, width: int = 768, height: int = 512) -> str:
+    try:
+        encoded_prompt = urllib.parse.quote_plus(prompt)
+        image_url = f"{POLLINATIONS_URL}{encoded_prompt}?width={width}&height={height}&nologo=true"
+        with urllib.request.urlopen(image_url, timeout=40) as response:
+            payload = response.read()
+        return base64.b64encode(payload).decode("utf-8")
+    except Exception:
+        return ""
+
+
 def generate_design_render(prompt: str, width: int = 768, height: int = 512) -> str:
     try:
         pipe = get_pipeline()
@@ -29,4 +43,4 @@ def generate_design_render(prompt: str, width: int = 768, height: int = 512) -> 
         image.save(buffer, format="PNG")
         return base64.b64encode(buffer.getvalue()).decode("utf-8")
     except Exception:
-        return ""
+        return _pollinations_fallback(prompt, width=width, height=height)

@@ -228,6 +228,33 @@ def chat_with_project(
     )
 
     answer = generate_chat_response(prompt)
+    lower_message = chat_request.message.lower()
+    if not analysis_details:
+        answer = "Please run the image analysis first, then ask project questions again."
+    elif any(token in lower_message for token in ["plant", "recommend", "which plant", "best plant"]):
+        selected = analysis_details.get("plant_selection") or []
+        if selected:
+            first = selected[0]
+            answer = (
+                f"For this project, the highest-fit plant is {first['common_name']} ({first['botanical_name']}). "
+                f"It suits {analysis_details.get('sunlight', 'the site')} exposure and the current {analysis_details.get('space_type', 'space')} context."
+            )
+    elif any(token in lower_message for token in ["boq", "cost", "budget", "estimate"]):
+        total_cost = analysis_details.get("total_cost_inr")
+        if total_cost is not None:
+            answer = f"The current BOQ estimate for this project is ₹{int(total_cost):,} based on the saved analysis details."
+    elif any(token in lower_message for token in ["layout", "path", "zone", "placement"]):
+        answer = (
+            "The saved layout guidance points to a structured planting and circulation plan for the current site. "
+            f"The site is classified as {analysis_details.get('space_type', 'Unknown')} with {analysis_details.get('sunlight', 'Unknown')} sunlight and {analysis_details.get('soil_condition', 'Unknown')} soil."
+        )
+    elif answer.lower().startswith("i could not generate"):
+        answer = (
+            "Based on the saved analysis, the project has been scoped as a "
+            f"{analysis_details.get('space_type', 'Unknown')} space with {analysis_details.get('sunlight', 'Unknown')} sunlight and {analysis_details.get('soil_condition', 'Unknown')} soil. "
+            "The current recommendation is to keep the design aligned with the saved plant selection, BOQ, and layout blueprint."
+        )
+
     return {"project_id": project.id, "answer": answer}
 
 
