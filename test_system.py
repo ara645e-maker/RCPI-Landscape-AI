@@ -123,6 +123,29 @@ class SystemIntegrationTests(unittest.TestCase):
 
         os.remove(image_path)
 
+    def test_chat_without_analysis_still_returns_grounded_guidance(self):
+        user = self._create_user()
+        token = create_access_token({"email": user.email, "role": user.role})
+        headers = {"Authorization": f"Bearer {token}"}
+
+        project_resp = self.client.post(
+            "/api/projects",
+            json={"name": "Fresh QA Project", "area_sqft": 180, "preferred_style": "Modern Indian Garden"},
+            headers=headers,
+        )
+        self.assertEqual(project_resp.status_code, 200)
+        project_id = project_resp.json()["id"]
+
+        chat_resp = self.client.post(
+            f"/api/projects/{project_id}/chat",
+            json={"message": "How should I place a water feature for a balanced landscape layout?"},
+            headers=headers,
+        )
+        self.assertEqual(chat_resp.status_code, 200)
+        answer = chat_resp.json()["answer"]
+        self.assertNotIn("Please run the image analysis first", answer)
+        self.assertTrue(answer)
+
     def test_rag_and_boq_pipeline(self):
         brain = {
             "flora": [

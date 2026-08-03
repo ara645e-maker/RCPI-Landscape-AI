@@ -230,9 +230,7 @@ def chat_with_project(
 
     answer = generate_chat_response(prompt)
     lower_message = chat_request.message.lower()
-    if not analysis_details:
-        answer = "Please run the image analysis first, then ask project questions again."
-    elif any(token in lower_message for token in ["plant", "recommend", "which plant", "best plant"]):
+    if any(token in lower_message for token in ["plant", "recommend", "which plant", "best plant"]):
         selected = analysis_details.get("plant_selection") or []
         if selected:
             first = selected[0]
@@ -240,21 +238,43 @@ def chat_with_project(
                 f"For this project, the highest-fit plant is {first['common_name']} ({first['botanical_name']}). "
                 f"It suits {analysis_details.get('sunlight', 'the site')} exposure and the current {analysis_details.get('space_type', 'space')} context."
             )
+        elif retrieved_docs:
+            best_doc = retrieved_docs[0]
+            answer = (
+                f"Based on the available plant knowledge, {best_doc['text'][:300]}"
+            )
     elif any(token in lower_message for token in ["boq", "cost", "budget", "estimate"]):
         total_cost = analysis_details.get("total_cost_inr")
         if total_cost is not None:
             answer = f"The current BOQ estimate for this project is ₹{int(total_cost):,} based on the saved analysis details."
-    elif any(token in lower_message for token in ["layout", "path", "zone", "placement"]):
-        answer = (
-            "The saved layout guidance points to a structured planting and circulation plan for the current site. "
-            f"The site is classified as {analysis_details.get('space_type', 'Unknown')} with {analysis_details.get('sunlight', 'Unknown')} sunlight and {analysis_details.get('soil_condition', 'Unknown')} soil."
-        )
+        elif retrieved_docs:
+            answer = (
+                "The project can be costed using the saved knowledge base and landscape pricing rules. "
+                f"Reference guidance: {retrieved_docs[0]['text'][:300]}"
+            )
+    elif any(token in lower_message for token in ["layout", "path", "zone", "placement", "water feature"]):
+        if analysis_details:
+            answer = (
+                "The saved layout guidance points to a structured planting and circulation plan for the current site. "
+                f"The site is classified as {analysis_details.get('space_type', 'Unknown')} with {analysis_details.get('sunlight', 'Unknown')} sunlight and {analysis_details.get('soil_condition', 'Unknown')} soil."
+            )
+        elif retrieved_docs:
+            answer = (
+                "For a balanced landscape layout, keep circulation clear and ensure utility, hardscape, and softscape zones remain proportionally separated. "
+                f"Reference guidance: {retrieved_docs[0]['text'][:300]}"
+            )
     elif answer.lower().startswith("i could not generate"):
-        answer = (
-            "Based on the saved analysis, the project has been scoped as a "
-            f"{analysis_details.get('space_type', 'Unknown')} space with {analysis_details.get('sunlight', 'Unknown')} sunlight and {analysis_details.get('soil_condition', 'Unknown')} soil. "
-            "The current recommendation is to keep the design aligned with the saved plant selection, BOQ, and layout blueprint."
-        )
+        if analysis_details:
+            answer = (
+                "Based on the saved analysis, the project has been scoped as a "
+                f"{analysis_details.get('space_type', 'Unknown')} space with {analysis_details.get('sunlight', 'Unknown')} sunlight and {analysis_details.get('soil_condition', 'Unknown')} soil. "
+                "The current recommendation is to keep the design aligned with the saved plant selection, BOQ, and layout blueprint."
+            )
+        elif retrieved_docs:
+            answer = (
+                "The landscape assistant has enough guidance to answer from the attached knowledge base. "
+                f"Grounded reference: {retrieved_docs[0]['text'][:300]}"
+            )
 
     return {"project_id": project.id, "answer": answer}
 

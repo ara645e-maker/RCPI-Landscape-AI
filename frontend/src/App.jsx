@@ -12,6 +12,7 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [renderMode, setRenderMode] = useState('3d');
   const [projectId, setProjectId] = useState(null);
+  const [detailTab, setDetailTab] = useState('company');
   const [authToken, setAuthToken] = useState(() => localStorage.getItem('rcpi_token') || '');
   const [messages, setMessages] = useState([
     {
@@ -21,6 +22,12 @@ export default function App() {
   ]);
 
   const activeModeLabel = useMemo(() => (renderMode === '2d' ? '2D Blueprint' : '3D Photorealistic'), [renderMode]);
+  const quickPrompts = [
+    'Design a premium 5000 sqft resort landscape with a balanced softscape and hardscape plan.',
+    'Suggest the best plants for a balcony and explain a simple irrigation approach.',
+    'How should I place a water feature in a modern courtyard garden?',
+    'Give me a cost-conscious BOQ strategy for a commercial lawn and planting package.'
+  ];
 
   const ensureAuthenticated = async () => {
     if (authToken) return authToken;
@@ -275,6 +282,19 @@ export default function App() {
                 <button type="button" onClick={() => setRenderMode('3d')} className={`rounded-lg border px-3 py-1.5 text-xs font-bold ${renderMode === '3d' ? 'border-emerald-400 bg-emerald-500 text-slate-950' : 'border-slate-700 bg-slate-900 text-slate-300'}`}>3D Photorealistic</button>
               </div>
 
+              <div className="mb-3 flex flex-wrap gap-2">
+                {quickPrompts.map((prompt) => (
+                  <button
+                    key={prompt}
+                    type="button"
+                    onClick={() => setChatInput(prompt)}
+                    className="rounded-full border border-slate-700 bg-slate-900 px-3 py-1 text-[11px] text-slate-200 hover:border-emerald-500 hover:text-emerald-300"
+                  >
+                    {prompt}
+                  </button>
+                ))}
+              </div>
+
               <div className="mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-slate-800 bg-slate-900 p-2.5">
                 <label className="cursor-pointer rounded-lg border border-slate-700 bg-slate-800 px-4 py-2 text-xs font-semibold text-slate-200">
                   📷 Upload Site Photo
@@ -292,23 +312,39 @@ export default function App() {
           </div>
 
           <aside className="space-y-4 rounded-3xl border border-slate-800 bg-slate-900/80 p-4">
-            <div>
-              <h3 className="text-sm font-bold uppercase tracking-wider text-emerald-400">CPWD Standards</h3>
-              <p className="mt-2 text-xs leading-relaxed text-slate-300">Soil mix ratio, turf root zone, irrigation hydraulic zoning, lighting, and maintenance schedule are all embedded into the project reasoning flow.</p>
+            <div className="flex flex-wrap gap-2">
+              {['company', 'cpwd', 'contact'].map((tab) => (
+                <button
+                  key={tab}
+                  type="button"
+                  onClick={() => setDetailTab(tab)}
+                  className={`rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wider ${detailTab === tab ? 'bg-emerald-500 text-slate-950' : 'border border-slate-700 bg-slate-950 text-slate-300'}`}
+                >
+                  {tab}
+                </button>
+              ))}
             </div>
-            <div>
-              <h3 className="text-sm font-bold uppercase tracking-wider text-emerald-400">Live Modules</h3>
-              <ul className="mt-2 space-y-2 text-xs text-slate-300">
-                <li>• Project analysis & BOQ</li>
-                <li>• Photo upload & render generation</li>
-                <li>• Grounded project Q&A</li>
-                <li>• 2D/3D design switch</li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="text-sm font-bold uppercase tracking-wider text-emerald-400">Company</h3>
-              <p className="mt-2 text-xs leading-relaxed text-slate-300">RCPI INDIA PRIVATE LIMITED is the trusted engineering and landscape intelligence brand behind the integrated site design, estimate, procurement, and execution planning workflow.</p>
-            </div>
+
+            {detailTab === 'company' && (
+              <div>
+                <h3 className="text-sm font-bold uppercase tracking-wider text-emerald-400">Company</h3>
+                <p className="mt-2 text-xs leading-relaxed text-slate-300">RCPI INDIA PRIVATE LIMITED is the trusted engineering and landscape intelligence brand behind the integrated site design, estimate, procurement, and execution planning workflow.</p>
+              </div>
+            )}
+
+            {detailTab === 'cpwd' && (
+              <div>
+                <h3 className="text-sm font-bold uppercase tracking-wider text-emerald-400">CPWD Standards</h3>
+                <p className="mt-2 text-xs leading-relaxed text-slate-300">Soil mix ratio, turf root zone, irrigation hydraulic zoning, lighting, and maintenance schedule are all embedded into the project reasoning flow.</p>
+              </div>
+            )}
+
+            {detailTab === 'contact' && (
+              <div>
+                <h3 className="text-sm font-bold uppercase tracking-wider text-emerald-400">Help Desk</h3>
+                <p className="mt-2 text-xs leading-relaxed text-slate-300">📧 RCPIINDIA.VADODARA@GMAIL.COM<br />📞 +91-9737199772 • +91-9406603778</p>
+              </div>
+            )}
           </aside>
         </section>
       </main>
