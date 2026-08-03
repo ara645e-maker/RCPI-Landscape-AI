@@ -23,6 +23,7 @@ from backend.proposal import generate_pdf_proposal
 from backend.rag_store import RAGStore
 from backend.industry_engine import calculate_industry_boq, build_layout_blueprint, choose_seasonal_factor
 from backend.brain import build_rag_prompt, build_render_prompt, design_concept, search_plants, select_plants, estimate_timeline, generate_terms
+from backend.llm_client import generate_chat_response
 from backend.image_analyzer import analyze_image
 from backend.schemas import UserCreate
 from fastapi.testclient import TestClient
@@ -112,6 +113,14 @@ class SystemIntegrationTests(unittest.TestCase):
         project = get_project(self.db, project_id)
         self.assertIsNotNone(project)
 
+        chat_resp = self.client.post(
+            f"/api/projects/{project_id}/chat",
+            json={"message": "Which plant should I prioritize for this balcony?"},
+            headers=headers,
+        )
+        self.assertEqual(chat_resp.status_code, 200)
+        self.assertIn("answer", chat_resp.json())
+
         os.remove(image_path)
 
     def test_rag_and_boq_pipeline(self):
@@ -152,8 +161,15 @@ class SystemIntegrationTests(unittest.TestCase):
         rag_prompt = build_rag_prompt(discovery, style, selected, brain, docs)
         self.assertIn("Plant knowledge base", rag_prompt)
 
-        render_prompt = build_render_prompt(discovery, style, selected)
-        self.assertIn("Indian landscaping", render_prompt)
+        render_prompt_2d = build_render_prompt(discovery, style, selected, mode="2d")
+        self.assertIn("blueprint", render_prompt_2d.lower())
+
+        render_prompt_3d = build_render_prompt(discovery, style, selected, mode="3d")
+        self.assertIn("photorealistic", render_prompt_3d.lower())
+
+        chat_answer = generate_chat_response("Answer with a short, grounded recommendation for this balcony garden.")
+        self.assertIsInstance(chat_answer, str)
+        self.assertTrue(chat_answer)
 
         seasonal_factor = choose_seasonal_factor("summer", {"pricing_rules": {"seasonal_variations": {"summer": 1.1}}})
         self.assertGreater(seasonal_factor, 1.0)

@@ -1,13 +1,20 @@
 import React, { useState } from 'react';
 
-export default function App() {
-  const GROQ_API_KEY = import.meta.env.VITE_GROQ_API_KEY;
+const API_BASE = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+const DEFAULT_EMAIL = import.meta.env.VITE_DEMO_EMAIL || 'demo@rcpi.local';
+const DEFAULT_PASSWORD = import.meta.env.VITE_DEMO_PASSWORD || 'demo1234';
 
+export default function App() {
   const [sitePhoto, setSitePhoto] = useState(null);
+  const [siteFile, setSiteFile] = useState(null);
   const [photoBase64, setPhotoBase64] = useState('');
   const [userPrompt, setUserPrompt] = useState('');
+  const [chatInput, setChatInput] = useState('');
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState('studio'); // 'studio' | 'specs' | 'helpdesk'
+  const [renderMode, setRenderMode] = useState('3d');
+  const [activeTab, setActiveTab] = useState('studio');
+  const [projectId, setProjectId] = useState(null);
+  const [authToken, setAuthToken] = useState(localStorage.getItem('rcpi_token') || '');
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
@@ -15,9 +22,78 @@ export default function App() {
     }
   ]);
 
+  const ensureAuthenticated = async () => {
+    if (authToken) return authToken;
+
+    try {
+      const registerResponse = await fetch(`${API_BASE}/api/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: DEFAULT_EMAIL,
+          full_name: 'Demo User',
+          password: DEFAULT_PASSWORD,
+          role: 'client',
+        }),
+      });
+
+      if (!registerResponse.ok && registerResponse.status !== 400) {
+        throw new Error('Registration failed');
+      }
+    } catch (error) {
+      console.warn('Register step skipped or failed', error);
+    }
+
+    const loginResponse = await fetch(`${API_BASE}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: DEFAULT_EMAIL,
+        password: DEFAULT_PASSWORD,
+      }),
+    });
+
+    const loginData = await loginResponse.json();
+    if (!loginResponse.ok || !loginData.access_token) {
+      throw new Error(loginData.detail || 'Authentication failed');
+    }
+
+    localStorage.setItem('rcpi_token', loginData.access_token);
+    setAuthToken(loginData.access_token);
+    return loginData.access_token;
+  };
+
+  const ensureProject = async (token) => {
+    if (projectId) return projectId;
+
+    const projectResponse = await fetch(`${API_BASE}/api/projects`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        name: 'Demo Project',
+        area_sqft: 180,
+        preferred_style: 'Modern Indian Garden',
+        image_filename: siteFile?.name || null,
+      }),
+    });
+
+    const projectData = await projectResponse.json();
+    if (!projectResponse.ok) {
+      throw new Error(projectData.detail || 'Project creation failed');
+    }
+
+    setProjectId(projectData.id);
+    return projectData.id;
+  };
+
   const handleImageUpload = (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files?.[0];
     if (!file) return;
+
+    setSiteFile(file);
     setSitePhoto(URL.createObjectURL(file));
 
     const reader = new FileReader();
@@ -34,99 +110,66 @@ export default function App() {
   const handleAnalyzeSite = async (e) => {
     if (e) e.preventDefault();
 
-    if (!GROQ_API_KEY) {
-      alert("⚠️ Configuration Error: VITE_GROQ_API_KEY is missing in Vercel Environment variables.");
-      return;
-    }
-
-    if (!userPrompt.trim() && !photoBase64) {
+    if (!siteFile && !userPrompt.trim()) {
       alert('Please upload a site image or specify your landscape engineering requirements.');
       return;
     }
 
-    const currentPrompt = userPrompt;
-    
-    // Generate specialized 3D Masterplan and 2D CAD Layout visual prompts based on user input
-    const encoded3D = encodeURIComponent(`photorealistic professional 3D landscape architecture masterplan, luxury garden design, lush green turf, decorative stone pavers, cascading water features, ambient LED uplighting, architectural rendering, 8k resolution: ${currentPrompt}`);
-    const render3DUrl = `https://image.pollinations.ai/prompt/${encoded3D}?width=1280&height=720&nologo=true`;
-
-    const encoded2D = encodeURIComponent(`architectural 2D site masterplan layout, top-down blueprint schematic drawing, landscape zoning, plant matrix allocation, irrigation pipeline routing, CAD technical drawing style: ${currentPrompt}`);
-    const render2DUrl = `https://image.pollinations.ai/prompt/${encoded2D}?width=1280&height=720&nologo=true`;
+    const token = await ensureAuthenticated();
+    const currentProjectId = await ensureProject(token);
+    const currentPrompt = userPrompt.trim() || 'Landscape site analysis request';
 
     const userMsg = {
       role: 'user',
       text: currentPrompt,
-      image: sitePhoto
+      image: sitePhoto,
     };
-    
+
     setMessages((prev) => [...prev, userMsg]);
     setLoading(true);
     setUserPrompt('');
 
     try {
-      const endpoint = `https://api.groq.com/openai/v1/chat/completions`;
+      const formData = new FormData();
+      if (siteFile) {
+        formData.append('image', siteFile);
+      }
+      formData.append('area_sqft', '180');
+      formData.append('preferred_style', 'Modern Indian Garden');
+      formData.append('render_mode', renderMode);
 
-      const systemPrompt = `You are the Principal Chief Landscape Architect & Global Director at RCPI INDIA PRIVATE LIMITED (CIN: U45202GJ2021PTC131249). 
-You possess elite, exhaustive expertise in Central Public Works Department (CPWD) guidelines, Delhi Schedule of Rates (DSR), and international landscape engineering. 
-
-Provide an exceptionally detailed, professional, rigorous architectural engineering report structured precisely in Markdown:
-
-1. **Executive Site Evaluation, Soil Conditioning & 3D Contour Mounding:**
-   - Geotechnical assessment and topsoil preparation.
-   - Exact soil conditioning ratio: 60% Screened Red Soil + 20% Organic Vermicompost + 20% Coarse River Sand.
-   - 3D contour mounding specifications, slope stabilization, and anti-weed geotextile matting.
-
-2. **Botanical Matrix & Softscape Masterplan:**
-   - Premium turf selection (e.g., Zoysia Matrella, Mexican Carpet Grass, Bermuda Tifway) with root depth specifications.
-   - Canopy trees, flowering shrubs, palm accents, and vertical green wall integration suitable for the regional climate.
-
-3. **Smart Hardscape, Lighting & Automated Irrigation Hydraulics:**
-   - Architectural stone pavers (Granite, Sandstone, Cobble), composite decking, and pergolas.
-   - Hydraulic pop-up rotor/spray sprinklers, automated solenoid valve zoning, and drip lines.
-   - Ambient IP65 waterproof LED uplighting for trees, path marker bollards, and step lights.
-
-4. **Comprehensive Itemized BOQ & Institutional Cost Estimate:**
-   - Create a clean Markdown table with columns: | Item Description | Specification / Standard | Unit | Quantity | Unit Rate (INR/USD) | Total Amount |
-   - Include specific line items for soil preparation, topsoil dressing, turf laying, planting, irrigation piping, hardscaping, and lighting.
-
-5. **Contractual Terms, Warranty & Maintenance Protocols:**
-   - 12-month post-installation maintenance and plant replacement warranty.
-   - Watering schedules, bi-monthly organic fertilization, and mowing cycles.`;
-
-      const messagesPayload = [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: currentPrompt + (photoBase64 ? " [Note: User attached an aerial/site photo for exact visual reference]" : "") }
-      ];
-
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${GROQ_API_KEY}`
+      const response = await fetch(`${API_BASE}/api/projects/${currentProjectId}/analyze`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          model: "llama-3.3-70b-versatile",
-          messages: messagesPayload,
-          temperature: 0.6
-        })
+        body: formData,
       });
 
       const data = await response.json();
-
-      if (data.error) {
-        throw new Error(data.error.message || "Groq API Gateway Error");
+      if (!response.ok) {
+        throw new Error(data.detail || 'Analysis request failed');
       }
 
-      const aiResponseText = data.choices?.[0]?.message?.content || "Analysis could not be generated at this moment. Please retry.";
+      const boqs = (data.boq || []).map((item) => `${item.item}: ${item.quantity} • ${item.total_cost_inr}`).join('\n');
+      const assistantText = [
+        `✅ Project analyzed successfully for project #${data.project_id}.`,
+        `Suggested style: ${data.suggested_style}`,
+        `Estimated timeline: ${data.estimated_days} days`,
+        `Total BOQ estimate: ${data.total_cost_inr}`,
+        `\nBOQ lines:\n${boqs}`,
+        `\nModel notes:\n${data.model_notes}`,
+      ].join('\n');
 
+      const renderSrc = data.render_base64 ? `data:image/png;base64,${data.render_base64}` : '';
       setMessages((prev) => [
-        ...prev, 
-        { 
-          role: 'assistant', 
-          text: aiResponseText, 
-          render3D: render3DUrl,
-          render2D: render2DUrl
-        }
+        ...prev,
+        {
+          role: 'assistant',
+          text: assistantText,
+          render3D: renderMode === '3d' ? renderSrc : '',
+          render2D: renderMode === '2d' ? renderSrc : '',
+        },
       ]);
     } catch (error) {
       console.error(error);
@@ -134,8 +177,56 @@ Provide an exceptionally detailed, professional, rigorous architectural engineer
         ...prev,
         {
           role: 'assistant',
-          text: `⚠️ **System Diagnostic Alert:** Request failed (${error.message}). Please verify your network or Groq API Key.`
-        }
+          text: `⚠️ **System Diagnostic Alert:** Request failed (${error.message}). Please verify the backend server and the project authorization flow.`,
+        },
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleChatSubmit = async (e) => {
+    if (e) e.preventDefault();
+    if (!chatInput.trim()) return;
+
+    const token = await ensureAuthenticated();
+    const currentProjectId = await ensureProject(token);
+
+    const question = chatInput.trim();
+    setChatInput('');
+    setMessages((prev) => [...prev, { role: 'user', text: question }]);
+    setLoading(true);
+
+    try {
+      const response = await fetch(`${API_BASE}/api/projects/${currentProjectId}/chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ message: question }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.detail || 'Chat request failed');
+      }
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: 'assistant',
+          text: data.answer,
+        },
+      ]);
+    } catch (error) {
+      console.error(error);
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: 'assistant',
+          text: `⚠️ Chat request failed: ${error.message}`,
+        },
       ]);
     } finally {
       setLoading(false);
@@ -144,14 +235,12 @@ Provide an exceptionally detailed, professional, rigorous architectural engineer
 
   return (
     <div className="min-h-screen bg-[#030712] text-slate-100 font-sans flex flex-col justify-between selection:bg-emerald-500 selection:text-black">
-      
-      {/* Top Enterprise Navigation Header */}
       <header className="w-full border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-md sticky top-0 z-50 px-6 py-3.5 flex flex-wrap justify-between items-center shadow-xl">
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 p-0.5 shadow-lg shadow-emerald-900/40 flex items-center justify-center">
-            <img 
-              src="https://images.unsplash.com/photo-1541888946425-d0fbb18f7247?w=120&auto=format&fit=crop&q=80" 
-              alt="RCPI Logo" 
+            <img
+              src="https://images.unsplash.com/photo-1541888946425-d0fbb18f7247?w=120&auto=format&fit=crop&q=80"
+              alt="RCPI Logo"
               className="h-full w-full object-cover rounded-[10px]"
             />
           </div>
@@ -164,22 +253,21 @@ Provide an exceptionally detailed, professional, rigorous architectural engineer
           </div>
         </div>
 
-        {/* Navigation Tabs */}
         <div className="flex items-center gap-3 mt-2 sm:mt-0">
           <div className="hidden md:flex bg-slate-900 border border-slate-800 p-1 rounded-xl text-xs">
-            <button 
+            <button
               onClick={() => setActiveTab('studio')}
               className={`px-3 py-1.5 rounded-lg transition-all font-medium ${activeTab === 'studio' ? 'bg-emerald-500 text-slate-950 font-bold shadow' : 'text-slate-400 hover:text-white'}`}
             >
               AI Studio & Drawings
             </button>
-            <button 
+            <button
               onClick={() => setActiveTab('specs')}
               className={`px-3 py-1.5 rounded-lg transition-all font-medium ${activeTab === 'specs' ? 'bg-emerald-500 text-slate-950 font-bold shadow' : 'text-slate-400 hover:text-white'}`}
             >
               CPWD & DSR Specs
             </button>
-            <button 
+            <button
               onClick={() => setActiveTab('helpdesk')}
               className={`px-3 py-1.5 rounded-lg transition-all font-medium ${activeTab === 'helpdesk' ? 'bg-emerald-500 text-slate-950 font-bold shadow' : 'text-slate-400 hover:text-white'}`}
             >
@@ -194,13 +282,10 @@ Provide an exceptionally detailed, professional, rigorous architectural engineer
         </div>
       </header>
 
-      {/* Main Workspace */}
       <main className="flex-grow w-full max-w-7xl mx-auto p-4 md:p-6 flex flex-col gap-6">
-        
         {activeTab === 'studio' && (
           <div className="relative rounded-3xl overflow-hidden border border-slate-800 shadow-2xl bg-gradient-to-r from-slate-900 via-slate-950 to-slate-900 p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="absolute inset-0 opacity-20 pointer-events-none bg-[radial-gradient(#10b981_1px,transparent_1px)] [background-size:16px_16px]"></div>
-            
             <div className="z-10 max-w-2xl space-y-3">
               <div className="inline-flex items-center gap-2 bg-emerald-500/10 text-emerald-400 text-xs px-3 py-1 rounded-full border border-emerald-500/20 font-bold">
                 ✨ Automated 2D CAD Drawings, 3D Masterplans & Complete BOQ
@@ -211,24 +296,23 @@ Provide an exceptionally detailed, professional, rigorous architectural engineer
               <p className="text-xs md:text-sm text-slate-300 leading-relaxed">
                 Generate professional 2D layout blueprints, realistic 3D architectural renders, CPWD soil conditioning ratios, turf matrices, and itemized financial BOQs instantly.
               </p>
-              
               <div className="flex flex-wrap gap-2 pt-2">
-                <button onClick={() => handleQuickPrompt("Design a 10000 sqft luxury resort landscape with 3D contour mounding, Zoysia grass, stone pathway, pop-up sprinklers, and complete itemized BOQ.")} className="text-[11px] bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg border border-slate-700 transition">
+                <button onClick={() => handleQuickPrompt('Design a 10000 sqft luxury resort landscape with 3D contour mounding, Zoysia grass, stone pathway, pop-up sprinklers, and complete itemized BOQ.')} className="text-[11px] bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg border border-slate-700 transition">
                   🌴 Luxury Resort (2D & 3D + BOQ)
                 </button>
-                <button onClick={() => handleQuickPrompt("Plan a corporate campus green zone with vertical gardens, canopy trees, jogging track, solar LED lighting, and institutional BOQ.")} className="text-[11px] bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg border border-slate-700 transition">
+                <button onClick={() => handleQuickPrompt('Plan a corporate campus green zone with vertical gardens, canopy trees, jogging track, solar LED lighting, and institutional BOQ.')} className="text-[11px] bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg border border-slate-700 transition">
                   🏢 Corporate Campus Masterplan
                 </button>
-                <button onClick={() => handleQuickPrompt("Provide 3000 sqft residential villa lawn, topsoil dressing 60:20:20 ratio, Mexican carpet grass, pergola, drip irrigation, and cost BOQ.")} className="text-[11px] bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg border border-slate-700 transition">
+                <button onClick={() => handleQuickPrompt('Provide 3000 sqft residential villa lawn, topsoil dressing 60:20:20 ratio, Mexican carpet grass, pergola, drip irrigation, and cost BOQ.')} className="text-[11px] bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-1.5 rounded-lg border border-slate-700 transition">
                   🏡 Modern Villa Lawn & Irrigation
                 </button>
               </div>
             </div>
 
             <div className="z-10 w-full md:w-80 h-48 rounded-2xl overflow-hidden border border-slate-700 shadow-2xl relative group">
-              <img 
-                src="https://images.unsplash.com/photo-1558904541-efa8c4a75f1b?w=600&auto=format&fit=crop&q=80" 
-                alt="Landscape Architecture Sample" 
+              <img
+                src="https://images.unsplash.com/photo-1558904541-efa8c4a75f1b?w=600&auto=format&fit=crop&q=80"
+                alt="Landscape Architecture Sample"
                 className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-3">
@@ -244,12 +328,12 @@ Provide an exceptionally detailed, professional, rigorous architectural engineer
           <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 md:p-8 space-y-4">
             <h3 className="text-lg font-bold text-emerald-400">CPWD, DSR & Soil Engineering Standards</h3>
             <p className="text-xs text-slate-300 leading-relaxed">
-              RCPI INDIA PRIVATE LIMITED adheres strictly to Central Public Works Department (CPWD) landscaping specifications, Delhi Schedule of Rates (DSR), and scientific horticultural standards. 
-              <br/><br/>
+              RCPI INDIA PRIVATE LIMITED adheres strictly to Central Public Works Department (CPWD) landscaping specifications, Delhi Schedule of Rates (DSR), and scientific horticultural standards.
+              <br /><br />
               <strong>Key Parameters Enforced by AI:</strong>
-              <br/>• <strong>Soil Mix Ratio:</strong> Standard 60% screened red soil, 20% organic vermicompost/FYM, and 20% coarse river sand for optimal root aeration.
-              <br/>• <strong>Topsoil Dressing:</strong> Minimum 150mm to 300mm depth depending on turf and shrub requirements.
-              <br/>• <strong>Irrigation Hydraulics:</strong> Automated pop-up sprinklers with precipitation rate matching and pressure-compensating drip lines.
+              <br />• <strong>Soil Mix Ratio:</strong> Standard 60% screened red soil, 20% organic vermicompost/FYM, and 20% coarse river sand for optimal root aeration.
+              <br />• <strong>Topsoil Dressing:</strong> Minimum 150mm to 300mm depth depending on turf and shrub requirements.
+              <br />• <strong>Irrigation Hydraulics:</strong> Automated pop-up sprinklers with precipitation rate matching and pressure-compensating drip lines.
             </p>
           </div>
         )}
@@ -264,11 +348,11 @@ Provide an exceptionally detailed, professional, rigorous architectural engineer
               </div>
               <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
                 <h4 className="text-xs font-bold text-white">📞 Helpline Numbers</h4>
-                <p className="text-xs text-slate-400 mt-1">+91-9737199772<br/>+91-9406603778</p>
+                <p className="text-xs text-slate-400 mt-1">+91-9737199772<br />+91-9406603778</p>
               </div>
               <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
                 <h4 className="text-xs font-bold text-white">🏢 Corporate Headquarters</h4>
-                <p className="text-xs text-slate-400 mt-1">Vadodara, Gujarat, India<br/>CIN: U45202GJ2021PTC131249</p>
+                <p className="text-xs text-slate-400 mt-1">Vadodara, Gujarat, India<br />CIN: U45202GJ2021PTC131249</p>
               </div>
             </div>
           </div>
@@ -276,7 +360,6 @@ Provide an exceptionally detailed, professional, rigorous architectural engineer
 
         {activeTab === 'studio' && (
           <div className="bg-slate-900/90 border border-slate-800/80 rounded-3xl flex flex-col h-[65vh] shadow-2xl overflow-hidden backdrop-blur-md">
-            
             <div className="flex-grow overflow-y-auto p-4 md:p-6 space-y-6">
               {messages.map((m, index) => (
                 <div
@@ -300,7 +383,6 @@ Provide an exceptionally detailed, professional, rigorous architectural engineer
                       </div>
                     )}
 
-                    {/* 2D Drawing Blueprint */}
                     {m.render2D && (
                       <div className="bg-slate-900 p-3 rounded-2xl border border-emerald-500/30">
                         <p className="text-[11px] font-bold text-emerald-400 mb-2 uppercase tracking-wider flex items-center gap-1.5">
@@ -314,7 +396,6 @@ Provide an exceptionally detailed, professional, rigorous architectural engineer
                       </div>
                     )}
 
-                    {/* 3D Masterplan Render */}
                     {m.render3D && (
                       <div className="bg-slate-900 p-3 rounded-2xl border border-emerald-500/30">
                         <p className="text-[11px] font-bold text-emerald-400 mb-2 uppercase tracking-wider flex items-center gap-1.5">
@@ -341,14 +422,34 @@ Provide an exceptionally detailed, professional, rigorous architectural engineer
             </div>
 
             <form onSubmit={handleAnalyzeSite} className="p-4 border-t border-slate-800 bg-slate-950 flex flex-col gap-3">
-              
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setRenderMode('2d')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition ${renderMode === '2d' ? 'bg-emerald-500 text-slate-950 border-emerald-400' : 'bg-slate-900 text-slate-300 border-slate-700'}`}
+                >
+                  2D Blueprint
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRenderMode('3d')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition ${renderMode === '3d' ? 'bg-emerald-500 text-slate-950 border-emerald-400' : 'bg-slate-900 text-slate-300 border-slate-700'}`}
+                >
+                  3D Photorealistic
+                </button>
+              </div>
+
               {sitePhoto && (
                 <div className="flex items-center gap-3 bg-slate-900 p-2.5 rounded-xl border border-slate-800">
                   <img src={sitePhoto} alt="Thumbnail" className="h-12 w-12 object-cover rounded-lg border border-slate-700" />
-                  <span className="text-xs text-emerald-400 font-semibold">Site Photo attached! Click Generate AI for 2D/3D Drawings & BOQ.</span>
+                  <span className="text-xs text-emerald-400 font-semibold">Site Photo attached! Click Generate AI for the selected {renderMode.toUpperCase()} mode analysis.</span>
                   <button
                     type="button"
-                    onClick={() => { setSitePhoto(null); setPhotoBase64(''); }}
+                    onClick={() => {
+                      setSitePhoto(null);
+                      setSiteFile(null);
+                      setPhotoBase64('');
+                    }}
                     className="ml-auto text-xs text-red-400 font-bold px-3 py-1 bg-red-950/40 rounded-lg hover:bg-red-900/50"
                   >
                     Remove
@@ -378,11 +479,31 @@ Provide an exceptionally detailed, professional, rigorous architectural engineer
                   Generate AI
                 </button>
               </div>
-            </form>
 
+              <div className="mt-1 rounded-2xl border border-slate-800 bg-slate-950 p-3">
+                <form onSubmit={handleChatSubmit} className="flex flex-col gap-2">
+                  <label className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider">Project Q&A</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={chatInput}
+                      onChange={(e) => setChatInput(e.target.value)}
+                      placeholder="Ask about plants, BOQ, layout, irrigation, or planting logic..."
+                      className="flex-grow bg-slate-800/80 border border-slate-700 rounded-xl px-4 py-3 text-xs md:text-sm text-white focus:outline-none focus:border-emerald-500 shadow-inner"
+                    />
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="bg-slate-800 hover:bg-slate-700 text-white font-bold px-4 py-3 rounded-xl text-xs border border-slate-700"
+                    >
+                      Ask AI
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </form>
           </div>
         )}
-
       </main>
 
       <footer className="w-full border-t border-slate-800 bg-slate-950 py-4 px-6 text-center text-xs text-slate-500 flex flex-col sm:flex-row justify-between items-center gap-2">

@@ -110,6 +110,15 @@ class ProjectResponse(BaseModel):
     }
 
 
+class ChatRequest(BaseModel):
+    message: str
+
+
+class ChatResponse(BaseModel):
+    project_id: int
+    answer: str
+
+
 class PaymentRequest(BaseModel):
     amount_inr: int
     provider: str

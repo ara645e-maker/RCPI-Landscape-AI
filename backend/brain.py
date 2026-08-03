@@ -83,8 +83,17 @@ def build_rag_prompt(discovery: Dict, style: str, plant_candidates: List[Dict], 
     )
 
 
-def build_render_prompt(discovery: Dict, style: str, plant_selection: List[Dict]) -> str:
+def build_render_prompt(discovery: Dict, style: str, plant_selection: List[Dict], mode: str = "3d") -> str:
     plant_names = ", ".join([plant["common_name"] for plant in plant_selection])
+    mode = (mode or "3d").lower()
+
+    if mode == "2d":
+        return (
+            f"Create a clean architectural top-down blueprint for a {discovery['space_type']} landscape with {discovery['sunlight']} exposure and {discovery['soil_condition']} soil. "
+            f"Style should be {style}, using a neat orthographic layout with labeled planting zones, pathways, turf zones, irrigation lines, and the following plant palette: {plant_names}. "
+            "Use a crisp architectural drafting aesthetic with clear lines, minimal shading, and readable dimension-style annotations for a professional 2D plan."
+        )
+
     return (
         f"Create a photorealistic Indian landscaping design for a {discovery['space_type']} space with {discovery['sunlight']} exposure and {discovery['soil_condition']} soil. "
         f"Style should be {style}, with lush native plants such as {plant_names}. Include warm terracotta textures, modern stone pathways, traditional Indian garden accents, soft lighting, and tropical greenery. "

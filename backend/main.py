@@ -1,3 +1,4 @@
+import json
 import os
 import shutil
 import sys
@@ -46,12 +47,14 @@ from backend.industry_engine import (
     build_layout_blueprint,
     choose_seasonal_factor,
 )
-from backend.llm_client import describe_space
+from backend.llm_client import describe_space, generate_chat_response
 from backend.payment import simulate_payment
 from backend.proposal import generate_pdf_proposal
 from backend.rag_store import RAGStore
 from backend.schemas import (
     AnalysisResponse,
+    ChatRequest,
+    ChatResponse,
     PaymentRequest,
     PaymentResponse,
     ProjectCreate,
@@ -183,12 +186,58 @@ def read_project(project_id: int, current_user=Depends(get_current_active_user),
     return project
 
 
+@app.post("/api/projects/{project_id}/chat", response_model=ChatResponse)
+def chat_with_project(
+    project_id: int,
+    chat_request: ChatRequest,
+    current_user=Depends(get_current_active_user),
+    db: Session = Depends(get_db),
+):
+    project = get_project(db, project_id)
+    if not project:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
+    if project.owner_id != current_user.id and current_user.role != "admin":
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Access denied")
+
+    analysis_details = project.analysis_details or {}
+    context_summary = [
+        f"Project name: {project.name}",
+        f"Area: {project.area_sqft} sq ft",
+        f"Preferred style: {project.preferred_style}",
+        f"Space type: {project.space_type or analysis_details.get('space_type', 'Unknown')}",
+        f"Sunlight: {project.sunlight or analysis_details.get('sunlight', 'Unknown')}",
+        f"Soil condition: {project.soil_condition or analysis_details.get('soil_condition', 'Unknown')}",
+        f"Summary: {project.summary or analysis_details.get('summary', 'No summary available')}",
+    ]
+
+    query = (
+        f"{chat_request.message} "
+        f"Project details: {'; '.join(context_summary)}"
+    )
+    retrieved_docs, _ = RAG_STORE.retrieve(query, top_k=6)
+
+    prompt = (
+        "You are a grounded Indian landscape assistant. Use the retrieved landscaping knowledge and the saved project context only. "
+        "Answer briefly, directly, and accurately, and do not invent plants, rates, or scope items that are not present in the project data.\n\n"
+        f"Project context:\n- {'\n- '.join(context_summary)}\n\n"
+        f"Project analysis details:\n{json.dumps(analysis_details, ensure_ascii=False, indent=2)}\n\n"
+        "Retrieved RAG context:\n"
+        + "\n".join([f"- {doc['type'].title()}: {doc['text']}" for doc in retrieved_docs])
+        + f"\n\nUser question: {chat_request.message}\n\n"
+        "Return a concise, practical answer tied to this project and the available knowledge base."
+    )
+
+    answer = generate_chat_response(prompt)
+    return {"project_id": project.id, "answer": answer}
+
+
 @app.post("/api/projects/{project_id}/analyze", response_model=AnalysisResponse)
 async def analyze_project(
     project_id: int,
     image: UploadFile = File(...),
     area_sqft: float = Form(150.0),
     preferred_style: str = Form("Modern Indian Garden"),
+    render_mode: str = Form("3d"),
     current_user=Depends(get_current_active_user),
     db: Session = Depends(get_db),
 ):
@@ -223,7 +272,8 @@ async def analyze_project(
     layout_blueprint = build_layout_blueprint(discovery, suggested_style, plant_selection, DESIGN_DATA)
     estimated_days = estimate_timeline(area_sqft, suggested_style)
     terms = generate_terms(area_sqft, suggested_style)
-    render_prompt = build_render_prompt(discovery, suggested_style, plant_selection)
+    requested_mode = "2d" if str(render_mode).lower() == "2d" else "3d"
+    render_prompt = build_render_prompt(discovery, suggested_style, plant_selection, mode=requested_mode)
     render_base64 = generate_design_render(render_prompt)
 
     analysis_payload = {

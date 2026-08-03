@@ -4,6 +4,7 @@ import subprocess
 from pathlib import Path
 
 MODEL = os.environ.get("OLLAMA_MODEL", "llava")
+TEXT_MODEL = os.environ.get("OLLAMA_TEXT_MODEL", "llama3.2")
 OLLAMA = os.environ.get("OLLAMA_CMD", "ollama")
 HF_VISION_MODEL = os.environ.get("HF_VISION_MODEL", "nlpconnect/vit-gpt2-image-captioning")
 HF_TEXT_MODEL = os.environ.get("HF_TEXT_MODEL", "google/flan-t5-small")
@@ -57,6 +58,24 @@ def hf_text_completion(prompt: str) -> str:
         return ""
     except Exception:
         return ""
+
+
+def generate_chat_response(prompt: str) -> str:
+    model_prompt = prompt.strip()
+    if command_exists(OLLAMA):
+        try:
+            cmd = [OLLAMA, "run", TEXT_MODEL, "--no-stream", "--prompt", model_prompt]
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=45)
+            if result.returncode == 0 and result.stdout:
+                return result.stdout.strip()
+        except Exception:
+            pass
+
+    completion = hf_text_completion(model_prompt)
+    if completion:
+        return completion
+
+    return "I could not generate a grounded answer from the local model. Please verify that the project context has been analyzed first."
 
 
 def describe_space(image_path: str, prompt: str) -> str:
