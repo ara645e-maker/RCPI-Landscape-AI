@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 
 const API_BASE = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
 const DEFAULT_EMAIL = import.meta.env.VITE_DEMO_EMAIL || 'demo@rcpi.local';
@@ -14,6 +14,9 @@ export default function App() {
   const [projectId, setProjectId] = useState(null);
   const [detailTab, setDetailTab] = useState('company');
   const [authToken, setAuthToken] = useState(() => localStorage.getItem('rcpi_token') || '');
+  const [userProfile, setUserProfile] = useState(null);
+  const [projectHistory, setProjectHistory] = useState([]);
+  const [proposalStatus, setProposalStatus] = useState('');
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
@@ -75,6 +78,34 @@ export default function App() {
     return loginData.access_token;
   };
 
+  const loadUserProfile = async (token) => {
+    try {
+      const profileResponse = await fetch(`${API_BASE}/api/users/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const profileData = await profileResponse.json();
+      if (profileResponse.ok) {
+        setUserProfile(profileData);
+      }
+    } catch (error) {
+      console.warn('User profile load skipped', error);
+    }
+  };
+
+  const refreshProjectHistory = async (token) => {
+    try {
+      const projectResponse = await fetch(`${API_BASE}/api/projects`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const projects = await projectResponse.json();
+      if (projectResponse.ok) {
+        setProjectHistory(Array.isArray(projects) ? projects : []);
+      }
+    } catch (error) {
+      console.warn('Project history load skipped', error);
+    }
+  };
+
   const ensureProject = async (token) => {
     if (projectId) return projectId;
 
@@ -98,8 +129,15 @@ export default function App() {
     }
 
     setProjectId(projectData.id);
+    await refreshProjectHistory(token);
     return projectData.id;
   };
+
+  useEffect(() => {
+    if (!authToken) return;
+    loadUserProfile(authToken);
+    refreshProjectHistory(authToken);
+  }, [authToken]);
 
   const handleImageUpload = (e) => {
     const file = e.target.files?.[0];
@@ -158,6 +196,7 @@ export default function App() {
           render3D: renderMode === '3d' ? renderSrc : '',
         },
       ]);
+      await refreshProjectHistory(token);
     } catch (error) {
       setMessages((prev) => [
         ...prev,
@@ -168,6 +207,27 @@ export default function App() {
       ]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleProposalDownload = async (projectIdToUse) => {
+    try {
+      setProposalStatus('Generating PDF proposal...');
+      const token = await ensureAuthenticated();
+      const response = await fetch(`${API_BASE}/api/projects/${projectIdToUse}/proposal`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.detail || 'Proposal generation failed');
+      }
+
+      const pdfBlob = await fetch(`data:application/pdf;base64,${data.proposal_pdf_base64}`).then((blobResponse) => blobResponse.blob());
+      const pdfUrl = URL.createObjectURL(pdfBlob);
+      window.open(pdfUrl, '_blank', 'noopener,noreferrer');
+      setProposalStatus('Proposal opened successfully.');
+    } catch (error) {
+      setProposalStatus(`⚠️ ${error.message}`);
     }
   };
 
@@ -339,17 +399,32 @@ export default function App() {
                   <div className="flex items-center justify-between"><span>Design confidence</span><span className="font-bold text-emerald-300">High</span></div>
                   <div className="flex items-center justify-between"><span>BOQ readiness</span><span className="font-bold text-sky-300">Prepared</span></div>
                   <div className="flex items-center justify-between"><span>Render mode</span><span className="font-bold text-fuchsia-300">{activeModeLabel}</span></div>
+                  <div className="flex items-center justify-between"><span>Credits</span><span className="font-bold text-amber-300">{userProfile?.credits ?? 20}</span></div>
                 </div>
               </div>
 
               <div className="rounded-2xl border border-slate-800 bg-slate-950/80 p-3">
-                <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-slate-400">Workstream</p>
-                <ul className="mt-3 space-y-2 text-xs text-slate-300">
-                  <li>• Image-to-design analysis</li>
-                  <li>• Plant + irrigation intelligence</li>
-                  <li>• BOQ-driven execution suggestion</li>
-                  <li>• Client conversation support</li>
-                </ul>
+                <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-slate-400">Project History</p>
+                <div className="mt-3 space-y-2 text-xs text-slate-300">
+                  {projectHistory.length === 0 ? (
+                    <p className="text-slate-400">No saved projects yet.</p>
+                  ) : (
+                    projectHistory.slice(0, 4).map((project) => (
+                      <button
+                        key={project.id}
+                        type="button"
+                        onClick={() => setProjectId(project.id)}
+                        className="w-full rounded-xl border border-slate-800 bg-slate-900 p-2 text-left hover:border-emerald-400"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="font-bold text-white">{project.name}</span>
+                          <span className="text-[10px] text-emerald-300">{project.area_sqft ?? 0} sqft</span>
+                        </div>
+                        <div className="mt-1 text-[10px] text-slate-400">{project.preferred_style}</div>
+                      </button>
+                    ))
+                  )}
+                </div>
               </div>
             </div>
 
@@ -370,6 +445,10 @@ export default function App() {
               <div>
                 <h3 className="text-sm font-bold uppercase tracking-wider text-emerald-400">Company</h3>
                 <p className="mt-2 text-xs leading-relaxed text-slate-300">RCPI INDIA PRIVATE LIMITED is the trusted engineering and landscape intelligence brand behind the integrated site design, estimate, procurement, and execution planning workflow.</p>
+                <div className="mt-3 space-y-2 rounded-2xl border border-slate-800 bg-slate-950/80 p-3 text-xs text-slate-300">
+                  <div className="flex items-center justify-between"><span>Client identity</span><span className="font-bold text-emerald-300">RCPI Brand Ready</span></div>
+                  <div className="flex items-center justify-between"><span>Workflow mode</span><span className="font-bold text-sky-300">Unified AI Console</span></div>
+                </div>
               </div>
             )}
 
@@ -384,6 +463,14 @@ export default function App() {
               <div>
                 <h3 className="text-sm font-bold uppercase tracking-wider text-emerald-400">Help Desk</h3>
                 <p className="mt-2 text-xs leading-relaxed text-slate-300">📧 RCPIINDIA.VADODARA@GMAIL.COM<br />📞 +91-9737199772 • +91-9406603778</p>
+                <button
+                  type="button"
+                  onClick={() => handleProposalDownload(projectId || projectHistory[0]?.id)}
+                  className="mt-3 w-full rounded-xl bg-emerald-500 px-4 py-2 text-[11px] font-black text-slate-950"
+                >
+                  Download Proposal PDF
+                </button>
+                {proposalStatus && <p className="mt-2 text-[11px] text-emerald-300">{proposalStatus}</p>}
               </div>
             )}
           </aside>
