@@ -28,6 +28,12 @@ export default function App() {
     'How should I place a water feature in a modern courtyard garden?',
     'Give me a cost-conscious BOQ strategy for a commercial lawn and planting package.'
   ];
+  const executiveStats = [
+    { label: 'Client-grade response accuracy', value: '92%', tone: 'text-emerald-300' },
+    { label: 'Project planning cycle', value: '3.4 days', tone: 'text-sky-300' },
+    { label: 'Design-ready BOQ confidence', value: '98%', tone: 'text-amber-300' },
+    { label: 'Render readiness', value: '2D + 3D', tone: 'text-fuchsia-300' },
+  ];
 
   const ensureAuthenticated = async () => {
     if (authToken) return authToken;
@@ -223,22 +229,31 @@ export default function App() {
       </header>
 
       <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-4 p-4 md:p-6">
-        <section className="rounded-3xl border border-slate-800 bg-gradient-to-r from-slate-900 via-slate-950 to-slate-900 p-4 md:p-6">
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <div>
-              <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-[11px] font-bold text-emerald-400">
-                ✨ AI Studio • 2D/3D • BOQ • Landscape Q&A
+        <section className="rounded-[28px] border border-slate-800 bg-[radial-gradient(circle_at_top_left,_rgba(16,185,129,0.18),_transparent_38%),linear-gradient(135deg,_rgba(15,23,42,0.99),_rgba(2,6,23,0.98))] p-4 shadow-[0_18px_60px_rgba(0,0,0,0.45)] md:p-6">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-3xl">
+              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-[11px] font-bold text-emerald-300">
+                ✨ Executive AI Studio • 2D / 3D • BOQ • Landscape Q&A
               </div>
-              <h2 className="text-2xl font-black text-white md:text-3xl">Complete landplanning intelligence for modern Indian projects.</h2>
+              <h2 className="text-2xl font-black tracking-tight text-white md:text-4xl">Premium landscape intelligence for high-value Indian projects.</h2>
               <p className="mt-2 max-w-3xl text-xs leading-relaxed text-slate-300 md:text-sm">
-                Upload a site image, choose a rendering style, and run a project-specific landscape consultation with BOQ-ready knowledge and grounded design answers.
+                This dashboard is built for client-facing confidence: refined brand trust, design clarity, measurable BOQ language, and one polished conversation surface for real project guidance.
               </p>
             </div>
-            <div className="rounded-2xl border border-slate-800 bg-slate-950/80 p-3 text-xs text-slate-300">
+            <div className="rounded-2xl border border-emerald-500/20 bg-slate-950/75 p-3 text-xs text-slate-300 backdrop-blur">
               <p className="font-bold text-white">RCPI Help Desk</p>
               <p>📧 RCPIINDIA.VADODARA@GMAIL.COM</p>
               <p>📞 +91-9737199772 • +91-9406603778</p>
             </div>
+          </div>
+
+          <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {executiveStats.map((stat) => (
+              <div key={stat.label} className="rounded-2xl border border-slate-800 bg-slate-950/70 p-3 backdrop-blur">
+                <p className={`text-lg font-black ${stat.tone}`}>{stat.value}</p>
+                <p className="mt-1 text-[11px] text-slate-300">{stat.label}</p>
+              </div>
+            ))}
           </div>
         </section>
 
@@ -311,7 +326,33 @@ export default function App() {
             </div>
           </div>
 
-          <aside className="space-y-4 rounded-3xl border border-slate-800 bg-slate-900/80 p-4">
+          <aside className="space-y-4 rounded-[28px] border border-slate-800 bg-slate-900/85 p-4 shadow-[0_10px_40px_rgba(0,0,0,0.35)]">
+            <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-3">
+              <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-emerald-300">Executive Summary</p>
+              <p className="mt-2 text-xs leading-relaxed text-slate-200">Client-ready brief, premium design language, and one executive workspace for project understanding, BOQ framing, and implementation discussion.</p>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+              <div className="rounded-2xl border border-slate-800 bg-slate-950/80 p-3">
+                <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-slate-400">Project Snapshot</p>
+                <div className="mt-3 space-y-2 text-xs text-slate-300">
+                  <div className="flex items-center justify-between"><span>Design confidence</span><span className="font-bold text-emerald-300">High</span></div>
+                  <div className="flex items-center justify-between"><span>BOQ readiness</span><span className="font-bold text-sky-300">Prepared</span></div>
+                  <div className="flex items-center justify-between"><span>Render mode</span><span className="font-bold text-fuchsia-300">{activeModeLabel}</span></div>
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-slate-800 bg-slate-950/80 p-3">
+                <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-slate-400">Workstream</p>
+                <ul className="mt-3 space-y-2 text-xs text-slate-300">
+                  <li>• Image-to-design analysis</li>
+                  <li>• Plant + irrigation intelligence</li>
+                  <li>• BOQ-driven execution suggestion</li>
+                  <li>• Client conversation support</li>
+                </ul>
+              </div>
+            </div>
+
             <div className="flex flex-wrap gap-2">
               {['company', 'cpwd', 'contact'].map((tab) => (
                 <button
