@@ -110,8 +110,8 @@ export default function App() {
   const handleAnalyzeSite = async (e) => {
     if (e) e.preventDefault();
 
-    if (!siteFile && !userPrompt.trim()) {
-      alert('Please upload a site image or specify your landscape engineering requirements.');
+    if (!siteFile) {
+      alert('Please upload a site image before starting the analysis workflow.');
       return;
     }
 
@@ -421,7 +421,7 @@ export default function App() {
               )}
             </div>
 
-            <form onSubmit={handleAnalyzeSite} className="p-4 border-t border-slate-800 bg-slate-950 flex flex-col gap-3">
+            <div className="p-4 border-t border-slate-800 bg-slate-950 flex flex-col gap-3">
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
@@ -467,12 +467,19 @@ export default function App() {
                   type="text"
                   value={userPrompt}
                   onChange={(e) => setUserPrompt(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleAnalyzeSite(e);
+                    }
+                  }}
                   placeholder="Enter project specifications (e.g. 5000 sqft, 2D layout, 3D mounding, Zoysia grass, BOQ)..."
                   className="flex-grow bg-slate-800/80 border border-slate-700 rounded-xl px-4 py-3 text-xs md:text-sm text-white focus:outline-none focus:border-emerald-500 shadow-inner"
                 />
 
                 <button
-                  type="submit"
+                  type="button"
+                  onClick={handleAnalyzeSite}
                   disabled={loading}
                   className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold px-6 py-3 rounded-xl text-xs md:text-sm transition-all shadow-lg hover:shadow-emerald-500/25"
                 >
@@ -501,7 +508,7 @@ export default function App() {
                   </div>
                 </form>
               </div>
-            </form>
+            </div>
           </div>
         )}
       </main>
