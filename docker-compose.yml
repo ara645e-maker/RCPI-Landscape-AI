@@ -1,0 +1,24 @@
+version: '3.9'
+services:
+  backend:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - OLLAMA_MODEL=llava
+      - SD_MODEL_ID=runwayml/stable-diffusion-v1-5
+      - DEFAULT_ADMIN_EMAIL=admin@rahega.ai
+      - DEFAULT_ADMIN_PASSWORD=AdminPass123
+      - JWT_SECRET=supersecretkey
+      - DATABASE_URL=sqlite:///./backend/saas.db
+    volumes:
+      - ./backend/uploads:/app/uploads
+      - ./backend/data:/app/data
+  frontend:
+    image: node:20-bullseye
+    working_dir: /app/frontend
+    volumes:
+      - ./frontend:/app/frontend
+    ports:
+      - "5173:5173"
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"

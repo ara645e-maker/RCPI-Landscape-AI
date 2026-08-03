@@ -1,0 +1,53 @@
+{
+  "zoning": [
+    {"zone": "Softscape", "ratio": 0.60, "notes": "Maximize planting area while preserving circulation and seating nodes."},
+    {"zone": "Hardscape", "ratio": 0.25, "notes": "Use pathways, seating platforms and structural edges to define flow."},
+    {"zone": "Utility", "ratio": 0.15, "notes": "Reserve space for service areas, irrigation equipment and storage."}
+  ],
+  "styles": {
+    "Tropical Modernism": {
+      "features": ["clean linear terraces", "rich foliage layering", "simple water features", "warm stone finishes"],
+      "materials": ["natural stone", "terracotta", "timber decking", "textured plaster"],
+      "palette": "Vibrant greens with warm earth tones and accent flowering plants"
+    },
+    "Zen Minimalist": {
+      "features": ["minimal plant palette", "gravel beds", "stepping stones", "simple focal sculpture"],
+      "materials": ["sand", "black basalt", "bamboo", "smooth concrete"],
+      "palette": "Monochrome greens with muted foliage and subtle texture"}
+    ,
+    "Indian Courtyard": {
+      "features": ["central water court", "symmetrical planting", "jaali screens", "heritage paving"],
+      "materials": ["polished stone", "clay pots", "brick", "antique metal"],
+      "palette": "Lush greens with seasonal flowering accents and terracotta highlights"}
+    ,
+    "English Cottage": {
+      "features": ["meandering flower borders", "informal lawn edge", "climbing roses", "mixed perennial beds"],
+      "materials": ["rough stone", "timber fences", "pebble paths", "brick edging"],
+      "palette": "Soft pastels, textured foliage and layered flowering clusters"}
+    ,
+    "Mediterranean": {
+      "features": ["formal planting beds", "olive and citrus accents", "water-tight courtyards", "ceramic pottery"],
+      "materials": ["stucco", "limestone", "blue ceramics", "wooden pergolas"],
+      "palette": "Silver-gray foliage with bold floral accents and sunbaked stone"}
+  },
+  "planting_layers": [
+    "Canopy trees", "Accent shrubs", "Mid-level foliage", "Ground cover", "Climbers"
+  ],
+  "color_palettes": [
+    {"name": "Monochromatic Green", "notes": "Layer textured foliage in varying greens for calm sophistication."},
+    {"name": "Vibrant Tropical", "notes": "Combine yellow, orange, magenta and deep green for high-energy landscapes."},
+    {"name": "Textured Foliage", "notes": "Balance silver, burgundy and chartreuse leaves with minimal bloom color."}
+  ],
+  "layout_rules": [
+    {"rule": "Place the main focal specimen tree toward the north-east or centre of the garden for visual depth."},
+    {"rule": "Keep circulation pathways open and avoid forcing movement through dense planting."},
+    {"rule": "Use hardscape edges to separate service areas from softscape zones."},
+    {"rule": "Position water features near seating areas and reflective surfaces for maximum impact."},
+    {"rule": "Group plants by height with taller canopy elements at the back and groundcovers in the front."}
+  ],
+  "pairing_formulas": [
+    {"primary": "Frangipani", "underplant": "Duranta hedge", "accent": "Bougainvillea climber"},
+    {"primary": "Neem", "underplant": "Lemon grass", "accent": "Marigold border"},
+    {"primary": "Gulmohar", "underplant": "Lantana groundcover", "accent": "Jasmine climber"}
+  ]
+}

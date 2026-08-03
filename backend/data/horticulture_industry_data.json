@@ -1,0 +1,51 @@
+{
+  "execution_workflow": [
+    {"step": "Site Cleanup & Debris Removal", "description": "Clear vegetation, construction debris, old turf, and remove waste material from the site before planting.", "duration_days": 1},
+    {"step": "Soil Turning & Treating", "description": "Turn existing soil, loosen compaction, add organic amendments, manure, and improve drainage.", "duration_days": 1},
+    {"step": "Drainage Setup", "description": "Install sub-surface drains, gravel trenches, and edge drains in low-lying or patio areas.", "duration_days": 1},
+    {"step": "Hardscaping & Edging", "description": "Lay pathways, seating pads, edging, and boundary kerbs before final planting and turf work.", "duration_days": 1},
+    {"step": "Soil Enrichment", "description": "Apply compost, cow manure, biochar, and soil conditioners to prepared beds and planting pockets.", "duration_days": 1},
+    {"step": "Planting", "description": "Plant trees, shrubs, climbers, and bedding plants according to the layout with correct pit size and spacing.", "duration_days": 1},
+    {"step": "Turf Laying", "description": "Lay turf with a 10% wastage allowance for cutting and site loss, roll and finish the lawn edges.", "duration_days": 1},
+    {"step": "Drip Installation", "description": "Install drip lines, valves, filters and test the micro-irrigation system for planted zones.", "duration_days": 1},
+    {"step": "Initial Watering & Settling", "description": "Water the entire project, settle soil and turf, and inspect for required adjustments.", "duration_days": 1}
+  ],
+  "contract_models": {
+    "itemized": "Detailed bill of quantities with separate line items for materials, labor, irrigation, turfing, planting and hardscaping.",
+    "lump_sum": "Turnkey contract with a single price for full garden execution including site preparation, planting and commissioning."
+  },
+  "pricing_rules": {
+    "soil_per_cuft": 70,
+    "turf_per_sqft": 32,
+    "turf_wastage_pct": 10,
+    "soil_wastage_pct": 10,
+    "labor_per_sqft": 45,
+    "cleanup_per_sqft": 12,
+    "drainage_per_sqft": 20,
+    "hardscape_per_sqft": 55,
+    "irrigation_per_sqft": 28,
+    "contingency_pct": 10,
+    "amc_pct_min": 8,
+    "amc_pct_max": 12,
+    "seasonal_variations": {
+      "monsoon": 0.95,
+      "winter": 1.05,
+      "summer": 1.00
+    }
+  },
+  "nursery_hubs": [
+    {"name": "Kadiyam", "region": "South", "specialty": "Large tropical trees, fruit trees, and ornamental palms", "price_tier": "mid", "availability": "High"},
+    {"name": "Pune", "region": "West", "specialty": "Hardy shrubs, succulents, and container plants", "price_tier": "mid", "availability": "High"},
+    {"name": "Rajahmundry", "region": "South", "specialty": "Forest trees, hedges, and aquatic plants", "price_tier": "value", "availability": "Medium"},
+    {"name": "Saharanpur", "region": "North", "specialty": "Flowering shrubs, grafted roses, and established bonsai", "price_tier": "premium", "availability": "High"},
+    {"name": "Bangalore", "region": "South", "specialty": "Ornamental foliage, terrace plants, and modern design plants", "price_tier": "premium", "availability": "High"}
+  ],
+  "deal_terms": [
+    "Seasonal pricing factor is applied according to monsoon, winter and summer nursery availability.",
+    "Apply 10% wastage buffer on soil and turf quantities for site loss and cutting.",
+    "Include a 5-10% contingency buffer on the proposal total for unforeseen site conditions.",
+    "Offer AMC pricing at 8-12% of the total project cost per year for ongoing garden upkeep.",
+    "Itemized proposals must clearly distinguish between material, workmanship, and system commissioning costs."
+  ],
+  "procurement_logic": "Local nursery hubs are matched to the site region and plant type to create a lowest-risk sourcing plan. Use premium Bangalore nurseries for tropical designer plants; use Saharanpur for decorative roses and established specimens."
+}

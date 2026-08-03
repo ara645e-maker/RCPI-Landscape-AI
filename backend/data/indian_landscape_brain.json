@@ -1,0 +1,108 @@
+{
+  "flora": [
+    {
+      "botanical_name": "Hibiscus rosa-sinensis",
+      "common_name": "Gulmohar",
+      "hindi_name": "गुलमोहर",
+      "sunlight": ["Full Sun", "Partial Sun"],
+      "water": "Moderate",
+      "height_m": "1.5 - 3",
+      "growth": "Fast",
+      "maintenance": "Medium",
+      "placement": ["Lawn", "Boundary", "Balcony"],
+      "description": "Bright flowering shrub for Indian gardens and boundaries."
+    },
+    {
+      "botanical_name": "Bougainvillea spectabilis",
+      "common_name": "Bougainvillea",
+      "hindi_name": "बोगनवेलिया",
+      "sunlight": ["Full Sun"],
+      "water": "Low",
+      "height_m": "2 - 5",
+      "growth": "Fast",
+      "maintenance": "Low",
+      "placement": ["Boundary", "Lawn", "Rooftop"],
+      "description": "Drought-tolerant climber ideal for fences and pergolas."
+    },
+    {
+      "botanical_name": "Plumeria rubra",
+      "common_name": "Frangipani",
+      "hindi_name": "चंपा",
+      "sunlight": ["Full Sun", "Partial Sun"],
+      "water": "Moderate",
+      "height_m": "2 - 5",
+      "growth": "Medium",
+      "maintenance": "Medium",
+      "placement": ["Lawn", "Boundary", "Garden"],
+      "description": "Fragrant tropical tree used in Indian temples and gardens."
+    },
+    {
+      "botanical_name": "Sansevieria trifasciata",
+      "common_name": "Snake Plant",
+      "hindi_name": "सैनसेविअरिया",
+      "sunlight": ["Partial Sun", "Shade"],
+      "water": "Low",
+      "height_m": "0.6 - 1.2",
+      "growth": "Slow",
+      "maintenance": "Low",
+      "placement": ["Balcony", "Indoor", "Rooftop"],
+      "description": "Hardy air-purifying plant for shaded balconies and indoor corners."
+    },
+    {
+      "botanical_name": "Epipremnum aureum",
+      "common_name": "Money Plant",
+      "hindi_name": "मनकी प्लांट",
+      "sunlight": ["Partial Sun", "Shade"],
+      "water": "Moderate",
+      "height_m": "1 - 2",
+      "growth": "Fast",
+      "maintenance": "Low",
+      "placement": ["Balcony", "Indoor", "Rooftop"],
+      "description": "Versatile trailing plant for vines, planters, and vertical green walls."
+    },
+    {
+      "botanical_name": "Aloe vera",
+      "common_name": "Aloe Vera",
+      "hindi_name": "एलोवेरा",
+      "sunlight": ["Full Sun", "Partial Sun"],
+      "water": "Low",
+      "height_m": "0.3 - 0.6",
+      "growth": "Medium",
+      "maintenance": "Low",
+      "placement": ["Balcony", "Rooftop", "Indoor"],
+      "description": "Medicinal succulent for small gardens and terrace pots."
+    },
+    {
+      "botanical_name": "Tagetes erecta",
+      "common_name": "Marigold",
+      "hindi_name": "गेंदा",
+      "sunlight": ["Full Sun"],
+      "water": "Moderate",
+      "height_m": "0.3 - 1",
+      "growth": "Fast",
+      "maintenance": "Low",
+      "placement": ["Lawn", "Balcony", "Boundary"],
+      "description": "Bright seasonal bedding plant for Indian landscaping and festivals."
+    },
+    {
+      "botanical_name": "Cymbopogon citratus",
+      "common_name": "Lemon Grass",
+      "hindi_name": "किसनी",
+      "sunlight": ["Full Sun", "Partial Sun"],
+      "water": "Moderate",
+      "height_m": "1 - 1.5",
+      "growth": "Fast",
+      "maintenance": "Medium",
+      "placement": ["Boundary", "Lawn", "Balcony"],
+      "description": "Fragrant grass for borders, insect control, and thematic lawns."
+    }
+  ],
+  "cpwd_rates": {
+    "soil_per_cuft": 60,
+    "fertilizer_per_kg": 50,
+    "turf_per_sqft": 25,
+    "labor_per_sqft": 35,
+    "irrigation_per_sqft": 22,
+    "plant_unit_cost": 90
+  }
+}
