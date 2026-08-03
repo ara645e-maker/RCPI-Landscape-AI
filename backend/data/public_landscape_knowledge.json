@@ -1,0 +1,58 @@
+{
+  "public_landscape_principles": [
+    {
+      "title": "Site zoning",
+      "text": "Use a balanced landscape split of softscape, hardscape, and utility areas. Allocate roughly 60% for planting, 25% for hardscape, and 15% for service and irrigation functions to create a practical and maintainable site layout."
+    },
+    {
+      "title": "Circulation logic",
+      "text": "Keep pedestrian pathways direct, safe, and visually open. Avoid placing dense shrub masses in the main circulation path so accessibility and maintenance remain clean."
+    },
+    {
+      "title": "Water management",
+      "text": "Use soil preparation, contouring, and micro-irrigation, so water is distributed efficiently. Plant high-water species near water access zones and low-water species in exposed, hot, or dry pockets."
+    },
+    {
+      "title": "Climate adaptation",
+      "text": "Choose plant palettes according to local climate, sunlight exposure, soil, and seasonal variation. Tropical planting works best in warm humid and coastal zones, while drought-tolerant species suit exposed and dry sites."
+    }
+  ],
+  "site_planning_rules": [
+    {
+      "title": "Visual focality",
+      "text": "Place specimen trees or water features at the central focal point, with low planting in front and taller canopy behind for depth and hierarchy."
+    },
+    {
+      "title": "Layered planting",
+      "text": "Use canopy trees, accent shrubs, mid-height foliage, groundcover, and climbers in layered patterns to create a balanced landscape narrative."
+    },
+    {
+      "title": "Maintenance access",
+      "text": "Leave maintenance zones and service access around irrigation controllers, valves, and plant beds so long-term upkeep remains manageable."
+    }
+  ],
+  "maintenance_guidelines": [
+    {
+      "title": "Soil preparation",
+      "text": "Topsoil dressing with compost and manure improves root establishment. For turf and softscape, prepare a uniform and well-drained substrate before final plant placement."
+    },
+    {
+      "title": "Irrigation",
+      "text": "Use drip irrigation and pressure-controlled units for planting beds; allow lawn zones to receive appropriate once or twice daily watering depending on heat index and season."
+    },
+    {
+      "title": "Seasonal upkeep",
+      "text": "Prune lightly after the flowering window, inspect mulch depth and irrigation output, and replace seasonal annuals to keep the site visually sharp through the year."
+    }
+  ],
+  "quality_checks": [
+    {
+      "title": "BOQ quality",
+      "text": "A good BOQ separates material, labor, irrigation, turfing, and contingency items so cost control stays transparent and auditable."
+    },
+    {
+      "title": "Execution quality",
+      "text": "Execution should begin with site cleanup, soil treatment, drainage, hardscape edging, planting, turfing, and final commissioning."
+    }
+  ]
+}

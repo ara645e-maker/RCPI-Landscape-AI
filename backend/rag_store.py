@@ -30,6 +30,8 @@ class RAGStore:
                 self._append_industry_documents(kb)
             if "zoning" in kb or "styles" in kb:
                 self._append_design_documents(kb)
+            if "public_landscape_principles" in kb or "site_planning_rules" in kb:
+                self._append_public_landscape_documents(kb)
 
     def _append_plant_documents(self, kb):
         for plant in kb.get("flora", []):
@@ -142,6 +144,16 @@ class RAGStore:
             "text": "; ".join([f"{entry['primary']} with {entry['underplant']} and {entry['accent']}" for entry in kb.get('pairing_formulas', [])]),
             "meta": kb.get("pairing_formulas", []),
         })
+
+    def _append_public_landscape_documents(self, kb):
+        for section_name in ["public_landscape_principles", "site_planning_rules", "maintenance_guidelines", "quality_checks"]:
+            for entry in kb.get(section_name, []):
+                self.documents.append({
+                    "id": f"public_{section_name}_{entry['title']}",
+                    "type": "public",
+                    "text": f"{entry['title']}: {entry['text']}",
+                    "meta": entry,
+                })
 
     def _load_or_build_embeddings(self):
         try:

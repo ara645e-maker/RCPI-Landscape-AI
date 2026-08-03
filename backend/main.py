@@ -84,6 +84,7 @@ RAG_STORE = RAGStore(
         Path(__file__).resolve().parent / "data" / "indian_landscape_rag.json",
         Path(__file__).resolve().parent / "data" / "horticulture_industry_data.json",
         Path(__file__).resolve().parent / "data" / "design_methodology.json",
+        Path(__file__).resolve().parent / "data" / "public_landscape_knowledge.json",
     ],
     Path(__file__).resolve().parent / "data" / "rag_embeddings.npy",
 )
